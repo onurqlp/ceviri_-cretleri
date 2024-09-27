@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Çeviri Ücret Hesaplama - Ankara Yabancı Dil Akademisi (AYDA)</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  header { text-align: center; margin-bottom: 20px; }
+  header img { max-width: 150px; }
+  h2 { text-align: center; }
+  label { display: block; margin-top: 10px; }
+  select, input { width: 100%; padding: 8px; margin-top: 5px; }
+  button { margin-top: 15px; padding: 10px; width: 100%; }
+  #result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+</style>
+</head>
+<body>
+
+<header>
+  <!-- Logo eklemek isterseniz aşağıdaki img etiketinin src özelliğine logo dosyanızın yolunu ekleyin -->
+  <!-- Örneğin: <img src="logo.png" alt="AYDA Logo"> -->
+  <!-- Şu anda metin olarak AYDA yazıyoruz -->
+  <h1>AYDA</h1>
+  <p><strong>Ankara Yabancı Dil Akademisi</strong></p>
+</header>
+
+<h2>Çeviri Ücret Hesaplama</h2>
+
+<label for="sworn">Çeviri Türü:</label>
+<select id="sworn">
+  <option value="unsworn">Yeminsiz Çeviri</option>
+  <option value="sworn">Yeminli Çeviri</option>
+</select>
+
+<label for="document">Belge Türü:</label>
+<select id="document">
+  <!-- En popüler 100 belge türünü buraya ekleyeceğiz -->
+</select>
+
+<label for="pages">Sayfa Sayısı:</label>
+<input type="number" id="pages" min="1" value="1">
+
+<button onclick="calculatePrice()">Hesapla</button>
+
+<div id="result"></div>
+
+<script>
+// Belge türleri ve kategorileri
+var documents = [
+  { name: "Pasaport", categories: ["M"] },
+  { name: "Kimlik", categories: ["M"] },
+  { name: "Doğum Belgesi", categories: ["M"] },
+  { name: "Evlilik Cüzdanı", categories: ["M"] },
+  { name: "Diploma", categories: ["H", "A"] },
+  { name: "Transkript", categories: ["H", "A"] },
+  { name: "Vekaletname", categories: ["H"] },
+  { name: "Mahkeme Kararı", categories: ["H"] },
+  { name: "Sözleşme", categories: ["H"] },
+  { name: "Patent Dokümanı", categories: ["T", "H"] },
+  { name: "Kullanım Kılavuzu", categories: ["T"] },
+  { name: "Teknik Rapor", categories: ["T"] },
+  { name: "Tıbbi Rapor", categories: ["Ti"] },
+  { name: "Reçete", categories: ["Ti"] },
+  { name: "Tıbbi Makale", categories: ["Ti", "A"] },
+  { name: "Akademik Makale", categories: ["A"] },
+  { name: "Tez", categories: ["A"] },
+  { name: "Araştırma Projesi", categories: ["A"] },
+  { name: "Finansal Rapor", categories: ["S"] },
+  { name: "Şirket Tüzüğü", categories: ["H"] },
+  // Devamında 100 belge türünü ekleyebilirsiniz
+];
+
+// Çeviri kategorileri ve fiyatları
+var prices = {
+  'S': { single: 128, double: 154 },
+  'T': { single: 192, double: 230 },
+  'H': { single: 224, double: 269 },
+  'Ti': { single: 224, double: 269 },
+  'A': { single: 192, double: 230 },
+  'M': { single: 160, double: 192 }
+};
+
+// Belge türlerini seçeneğe ekleme
+var documentSelect = document.getElementById('document');
+documents.forEach(function(doc) {
+  var option = document.createElement('option');
+  option.value = doc.name;
+  option.textContent = doc.name;
+  documentSelect.appendChild(option);
+});
+
+function calculatePrice() {
+  var sworn = document.getElementById('sworn').value;
+  var documentName = document.getElementById('document').value;
+  var pages = parseInt(document.getElementById('pages').value);
+
+  // Seçilen belge türünün kategorisini bulma
+  var selectedDocument = documents.find(function(doc) {
+    return doc.name === documentName;
+  });
+
+  if (!selectedDocument) {
+    alert('Geçersiz belge türü.');
+    return;
+  }
+
+  var categories = selectedDocument.categories;
+
+  // Eğer birden fazla kategori varsa, kullanıcıya seçim yaptırma (zorunlu değil)
+  var category;
+  if (categories.length > 1) {
+    category = categories[0]; // Varsayılan olarak ilk kategoriyi seçelim
+    // Kullanıcıya seçenek sunmak isterseniz aşağıdaki kodu kullanabilirsiniz
+    /*
+    category = prompt('Lütfen çeviri kategorisini seçin: ' + categories.join(', '));
+    if (!prices[category]) {
+      alert('Geçersiz çeviri kategorisi.');
+      return;
+    }
+    */
+  } else {
+    category = categories[0];
+  }
+
+  // Fiyatları alma
+  var priceSingle = prices[category].single;
+  var priceDouble = prices[category].double;
+
+  // Yeminli çeviri için fiyatları güncelleme
+  if (sworn === 'sworn') {
+    priceSingle *= 1.2; // %20 artış
+    priceDouble *= 1.2;
+    priceSingle = Math.round(priceSingle);
+    priceDouble = Math.round(priceDouble);
+  }
+
+  // İndirim oranı hesaplama
+  var discountRate = 0;
+  if (pages >= 31) {
+    discountRate = 15;
+  } else if (pages >= 21) {
+    discountRate = 10;
+  } else if (pages >= 10) {
+    discountRate = 7;
+  }
+
+  // Toplam ücretler
+  var totalSingle = priceSingle * pages;
+  var totalDouble = priceDouble * pages;
+
+  // İndirim tutarları
+  var discountAmountSingle = totalSingle * (discountRate / 100);
+  var discountAmountDouble = totalDouble * (discountRate / 100);
+
+  // İndirimli toplam ücretler
+  var finalPriceSingle = totalSingle - discountAmountSingle;
+  var finalPriceDouble = totalDouble - discountAmountDouble;
+
+  // Sonuçları gösterme
+  var resultDiv = document.getElementById('result');
+  resultDiv.innerHTML = `
+    <h3>1 Nüsha İçin:</h3>
+    <p><strong>Belge Türü:</strong> ${documentName}</p>
+    <p><strong>Çeviri Kategorisi:</strong> ${getCategoryName(category)}</p>
+    <p><strong>Toplam Ücret:</strong> ${finalPriceSingle.toFixed(2)} TL</p>
+    <p><strong>İndirim Tutarı:</strong> ${discountAmountSingle.toFixed(2)} TL (%${discountRate})</p>
+    <p><strong>Sayfa Başı Ücret:</strong> ${priceSingle.toFixed(2)} TL</p>
+    <p><strong>Toplam Sayfa Sayısı:</strong> ${pages}</p>
+    <p><strong>Çeviri Türü:</strong> ${sworn === 'sworn' ? 'Yeminli' : 'Yeminsiz'}</p>
+    <hr>
+    <h3>2 Nüsha İçin:</h3>
+    <p><strong>Belge Türü:</strong> ${documentName}</p>
+    <p><strong>Çeviri Kategorisi:</strong> ${getCategoryName(category)}</p>
+    <p><strong>Toplam Ücret:</strong> ${finalPriceDouble.toFixed(2)} TL</p>
+    <p><strong>İndirim Tutarı:</strong> ${discountAmountDouble.toFixed(2)} TL (%${discountRate})</p>
+    <p><strong>Sayfa Başı Ücret:</strong> ${priceDouble.toFixed(2)} TL</p>
+    <p><strong>Toplam Sayfa Sayısı:</strong> ${pages}</p>
+    <p><strong>Çeviri Türü:</strong> ${sworn === 'sworn' ? 'Yeminli' : 'Yeminsiz'}</p>
+  `;
+}
+
+// Kategori kodunu açıklayıcı isme çevirme
+function getCategoryName(code) {
+  var categoryNames = {
+    'S': 'Standart Çeviri',
+    'T': 'Teknik Çeviri',
+    'H': 'Hukuki Çeviri',
+    'Ti': 'Tıbbi Çeviri',
+    'A': 'Akademik Çeviri',
+    'M': 'Matbu Evrak Çevirisi'
+  };
+  return categoryNames[code] || 'Bilinmeyen Kategori';
+}
+</script>
+
+</body>
+</html>
